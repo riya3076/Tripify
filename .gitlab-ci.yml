@@ -1,0 +1,91 @@
+variables:
+  # custom runner for group 9 team project
+  GITLAB_RUNNER: "group_nine_runner"
+  #for frontend
+  CI: "false"
+
+image: maven:latest
+
+stages:
+  - test-backend
+  - build-backend
+  - deploy-backend
+  - build-frontend
+  - deploy-frontend
+
+
+test-backend:
+  stage: test-backend
+#  tags:
+#    - group_nine_runner
+  script:
+    - cd Backend
+    - mvn clean test
+    # this will clean the target folder and then test the maven 
+  only:
+    - main
+
+
+build-backend:
+  stage: build-backend
+#  tags:
+#    - group_nine_runner
+  script:
+    - cd Backend
+    - mvn package
+  artifacts:
+    paths:
+      - Backend/target/*.jar
+  only:
+    - main
+
+
+# deployed on render with base url https://group09-prod.onrender.
+deploy-backend:
+  stage: deploy-backend
+#  tags:
+#    - group_nine_runner
+  script:
+    - echo "Deploy to prod server on render"
+    - curl -s "$RENDER_TRIGGER_URL_PROD_ENV"
+  only:
+    - prod
+
+# deployed on render with base url https://group09.onrender.com
+deploy-backend:
+  stage: deploy-backend
+#  tags:
+#    - group_nine_runner
+  script:
+    - echo "Deploy to prod server on render"
+    - curl -s "$RENDER_TRIGGER_URL_TEST_ENV"
+  only:
+    - main
+
+#frontend - db
+build-frontend:
+  stage: build-frontend
+  image: node:latest
+  script:
+    - cd Frontend
+    - echo "Building frontend"
+  artifacts:
+    paths:
+      - Frontend/build
+  only:
+    - main
+
+deploy-frontend:
+  stage: deploy-frontend
+  image: node:latest
+  script:
+    - cd Frontend
+    - echo "REACT_APP_BASE_URL=https://culturenet-apis.netlify.app/.netlify/functions/api" >> ".env"
+    - npm install @fortawesome/fontawesome-svg-core
+    - npm install --legacy-peer-deps
+    - npm install netlify-cli -g
+    - npm run build
+    - netlify deploy --dir "build" --auth $AUTH_TOKEN --site $SITE_ID_PROD --prod
+  only:
+    - main
+  

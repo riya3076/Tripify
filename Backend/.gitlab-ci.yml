@@ -1,0 +1,44 @@
+variables:
+  # custom runner for group 9 team project
+  GITLAB_RUNNER: "group_nine_runner"
+
+image: maven:latest
+
+# stages defined to test, then build and deploy the application on render.com
+stages:
+  - test
+  - build
+  - deploy
+
+test:
+  stage: test
+#  tags:
+#    - group_nine_runner
+  script:
+    # this will clean the target folder and then test the maven project
+    - mvn clean test
+  only:
+    - main
+
+build:
+  stage: build
+#  tags:
+#   - group_nine_runner
+  script:
+    - mvn package
+  artifacts:
+    paths:
+      - target/*.jar
+  only:
+    - main
+
+# deployed on render with base url https://group09.onrender.com
+deploy:
+  stage: deploy
+#  tags:
+#    - group_nine_runner
+  script:
+    - echo "Deploy to test server on render"
+    - curl -s "$RENDER_TRIGGER_URL_TEST_ENV"
+  only:
+    - main
